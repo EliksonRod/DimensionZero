@@ -8,12 +8,14 @@ using UnityEngine.SceneManagement;
 
 public class playerController : MonoBehaviour
 {
+    [SerializeField] private ParticleSystem jumpEffect = default;
+    [SerializeField] private ParticleSystem deathExplosion = default;
     public Animator noMoreJumpAnim;
     public Rigidbody2D RB;
+    public Transform target;
 
     public float Speed = 5;
     public float jumpForce = 10;
-    public float rotationSpeed = 50f;
 
     public Vector2 boxSize;
     public float castDistance;
@@ -38,38 +40,18 @@ public class playerController : MonoBehaviour
     {
         playerMovement();
     }
-
     private void playerMovement()
     {
         //Horizontal Movement
         RB.linearVelocity = new Vector2(Input.GetAxis("Horizontal") * Speed, RB.linearVelocity.y);
 
-        if (Input.GetKeyDown(KeyCode.W) || Input.GetKeyDown(KeyCode.D))
-        {
-            //transform.Rotate(Vector3.forward * rotationSpeed * Time.deltaTime);
-            RB.MoveRotation(90);
-        }
-
         //Jumping
         if (Input.GetKeyDown(KeyCode.Space) && jumps > 0)
         {
             jumps--;
-            Debug.Log("Jump key pressed");
             RB.linearVelocity = new Vector2(RB.linearVelocity.x, jumpForce);
 
-            //Play animation when out of jumps
-            if (jumps <= 0 && !isGrounded())
-            {
-                noMoreJumpAnim.enabled = true;
-                noMoreJumpAnim.Play("noMoreJumps");
-            }
-        }
-
-        //Replenish jumps when on ground 
-        if (isGrounded())
-        {
-            //Offset with - 1 because the boxcast will detect still on ground sometime after jumping
-            jumps = numberOfJumps - 1;
+            jumpEffect.Play();
         }
     }
     public bool isGrounded()
@@ -84,7 +66,6 @@ public class playerController : MonoBehaviour
             return false;
         }
     }
-
     private void OnDrawGizmos()
     {
         //Makes BoxCast visible in Unity Editor
@@ -93,21 +74,29 @@ public class playerController : MonoBehaviour
 
     private void OnTriggerEnter2D(Collider2D collider2D)
     {
+        //give player an extra jump when colliding with a powerup
+        if (collider2D.gameObject.tag == "PowerUp")
+        {
+            jumps++;
+            Destroy(collider2D.gameObject);
+        }
+        //go to next scene when colliding with exit object
         if (collider2D.gameObject.tag == "Exit")
         {
-            //Loads next scene in buildIndex
             SceneManager.LoadScene(buildIndex + 1);
         }
     }
-
     private void OnCollisionEnter2D(Collision2D collision2D)
     {
+        if (collision2D.gameObject.tag == "Ground")
+        {
+            deathExplosion.Play();
+            gameObject.SetActive(false);
+        }
         if (collision2D.gameObject.tag == "Hazard")
         {
-            Destroy(gameObject);
-
-            //Reloads Current Scene
-            SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+            deathExplosion.Play();
+            gameObject.SetActive(false);
         }
     }
 }
