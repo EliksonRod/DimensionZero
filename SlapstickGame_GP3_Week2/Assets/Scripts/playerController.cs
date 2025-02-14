@@ -10,7 +10,8 @@ public class playerController : MonoBehaviour
 {
     [SerializeField] private ParticleSystem jumpEffect = default;
     [SerializeField] private ParticleSystem deathExplosion = default;
-    public Animator noMoreJumpAnim;
+    [SerializeField] private ParticleSystem lastJumpEffect = default;
+
     public Rigidbody2D RB;
     public Transform target;
 
@@ -51,7 +52,12 @@ public class playerController : MonoBehaviour
             jumps--;
             RB.linearVelocity = new Vector2(RB.linearVelocity.x, jumpForce);
 
-            jumpEffect.Play();
+            if (jumps > 0)
+                jumpEffect.Play();
+            
+            if (jumps == 0)
+                lastJumpEffect.Play();
+              
         }
     }
     public bool isGrounded()
