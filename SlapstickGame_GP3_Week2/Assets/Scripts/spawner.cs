@@ -1,88 +1,98 @@
+using System.Collections;
 using System.Threading;
+using TMPro;
 using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.SceneManagement;
-using System.Collections;
-
-
+using static UnityEngine.Rendering.DebugUI;
 public class spawner : MonoBehaviour
 {
     //gameobjects
-    public GameObject[] objects;
-    public GameObject hazardParent;
-    public GameObject hazardParent2;
-    public GameObject exitOut;
-    public GameObject player;
+    public GameObject[] Collectibles;
+    public GameObject[] Hazards;
+    public GameObject LevelExit;
+    public GameObject PlayerObject;
+
+    public TextMeshProUGUI levelTimerDisplay;
 
     //random spawn coordinates
     public float minSpawnX;
-    public float minSpawnY;
     public float maxSpawnX;
+    public float minSpawnY;
     public float maxSpawnY;
 
+    public float levelTimer = 60;
+    int currentTime;
+
     //timer for spawning hazards
-    public float hazardTimer = 15f;
+    public float hazardSpawnCooldown = 15f;
 
-    //timer for spawning second set of hazards
-    public float hazard2Timer = 35f;
-
-    //timer for spawning exit
-    public float exitTimer = 5f;
-
-    //timer for spawning enemies
-    public float timer = 5f;
-    private float clock;
+    //timer for spawning collectibles
+    public float collectibleSpawnCooldown = 1.5f;
+    float collectibleSpawnTimer;
 
     private void Start()
     {
-        clock = timer;
+        //currentTime = levelTimer;
+        StartCoroutine(ActivateHazard());
+
     }
 
     // Update is called once per frame
     void Update()
     {
-        if (player.activeInHierarchy)
-        {
-
-        }
-        else
+        if (!PlayerObject.activeInHierarchy)
         {
             StartCoroutine(deathAnim());
         }
-        
-        //counts down the timers
-        clock -= Time.deltaTime;
-        hazardTimer -= Time.deltaTime;
-        hazard2Timer -= Time.deltaTime;
-        exitTimer -= Time.deltaTime;
 
-        if (clock <= 0)
+        if (levelTimerDisplay != null)
+            levelTimerDisplay.text = currentTime.ToString();
+
+        //counts down the timers
+        if (levelTimer > 0)
         {
+            levelTimer -= 1 * Time.deltaTime;
+            currentTime = Mathf.RoundToInt(levelTimer);
+        }
+        collectibleSpawnTimer -= Time.deltaTime;
+
+        //Spawns collectibles after timer reaches 0
+        if (collectibleSpawnTimer <= 0)
+        {
+            collectibleSpawnTimer = collectibleSpawnCooldown;
+
             //Randomly chooses what to spawn from list of objects[]
-            int randomIndex = Random.Range(0, objects.Length);
+            int randomIndex = Random.Range(0, Collectibles.Length);
 
             //Random range in an area where the objects will spawn
             Vector2 randomSpawnPosition = new Vector2(Random.Range(minSpawnX, maxSpawnX), Random.Range(minSpawnY, maxSpawnY));
 
             //does the spawning using the functions above 
-            Instantiate(objects[randomIndex], randomSpawnPosition, Quaternion.identity);
+            Instantiate(Collectibles[randomIndex], randomSpawnPosition, Quaternion.identity);
+        }
 
-            clock = timer;
-        }
-        if (hazardTimer <= 0)
+        //Activates level exit when timer reaches 0
+        if (currentTime <= 0)
         {
-            hazardParent.SetActive(true);
-        }
-        if (hazard2Timer <= 0)
-        {
-            hazardParent2.SetActive(true);
-        }
-        if (exitTimer <= 0)
-        {
-            exitOut.SetActive(true);
+            LevelExit.SetActive(true);
         }
     }
+
+    //Activates hazards after a set cooldown time
+    IEnumerator ActivateHazard()
+    {
+        yield return new WaitForSeconds(hazardSpawnCooldown);
+
+        for (int i = 0; i < Hazards.Length; i++)
+        {
+            Hazards[i].SetActive(true);
+            yield return new WaitForSeconds(hazardSpawnCooldown);
+        }
+    }
+
+    //Plays death animation then reloads the scene
     IEnumerator deathAnim()
     {
         yield return new WaitForSeconds(3);

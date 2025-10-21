@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using TMPro;
 using Unity.VisualScripting;
 using UnityEditor;
 using UnityEngine;
@@ -11,12 +12,15 @@ public class playerController : MonoBehaviour
     [SerializeField] private ParticleSystem jumpEffect = default;
     [SerializeField] private ParticleSystem deathExplosion = default;
     [SerializeField] private ParticleSystem lastJumpEffect = default;
+    public TextMeshProUGUI jumpCountDisplay;
+    public TextMeshProUGUI scoreDisplay;
 
     public Rigidbody2D RB;
     public Transform target;
 
     public float Speed = 5;
     public float jumpForce = 10;
+    int Score = 0;
 
     public Vector2 boxSize;
     public float castDistance;
@@ -24,14 +28,17 @@ public class playerController : MonoBehaviour
 
     Vector2 movement;
 
-    public float numberOfJumps;
-    private float jumps;
+    public float totalJumps;
+
+    [HideInInspector]
+    public float remainingJumps;
+
     int buildIndex;
 
     private void Awake()
     {
         //noMoreJumpAnim.enabled = false;
-        jumps = numberOfJumps;
+        remainingJumps = totalJumps;
 
         RB = GetComponent<Rigidbody2D>();
         buildIndex = SceneManager.GetActiveScene().buildIndex;
@@ -40,6 +47,11 @@ public class playerController : MonoBehaviour
     void Update()
     {
         playerMovement();
+
+        if (jumpCountDisplay != null)
+            jumpCountDisplay.text = "Jumps: " + remainingJumps.ToString();
+        if (scoreDisplay != null)
+            scoreDisplay.text = "Score: " + Score.ToString();
     }
     private void playerMovement()
     {
@@ -47,15 +59,15 @@ public class playerController : MonoBehaviour
         RB.linearVelocity = new Vector2(Input.GetAxis("Horizontal") * Speed, RB.linearVelocity.y);
 
         //Jumping
-        if (Input.GetKeyDown(KeyCode.Space) && jumps > 0)
+        if (Input.GetKeyDown(KeyCode.Space) && remainingJumps > 0)
         {
-            jumps--;
+            remainingJumps--;
             RB.linearVelocity = new Vector2(RB.linearVelocity.x, jumpForce);
 
-            if (jumps > 0)
+            if (remainingJumps > 0)
                 jumpEffect.Play();
             
-            if (jumps == 0)
+            if (remainingJumps == 0)
                 lastJumpEffect.Play();
               
         }
@@ -83,7 +95,8 @@ public class playerController : MonoBehaviour
         //give player an extra jump when colliding with a powerup
         if (collider2D.gameObject.tag == "PowerUp")
         {
-            jumps++;
+            remainingJumps++;
+            Score += 5;
             Destroy(collider2D.gameObject);
         }
         //go to next scene when colliding with exit object
