@@ -52,6 +52,11 @@ public class playerController : MonoBehaviour
             jumpCountDisplay.text = "Jumps: " + remainingJumps.ToString();
         if (scoreDisplay != null)
             scoreDisplay.text = "Score: " + Score.ToString();
+
+        if (Input.GetKeyUp(KeyCode.Escape))
+        {
+            SceneManager.LoadScene(0);
+        }
     }
     private void playerMovement()
     {
@@ -69,7 +74,6 @@ public class playerController : MonoBehaviour
             
             if (remainingJumps == 0)
                 lastJumpEffect.Play();
-              
         }
     }
     public bool isGrounded()
@@ -102,7 +106,7 @@ public class playerController : MonoBehaviour
         //go to next scene when colliding with exit object
         if (collider2D.gameObject.tag == "Exit")
         {
-            SceneManager.LoadScene(buildIndex + 1);
+            SceneManager.LoadScene(0);
         }
     }
     private void OnCollisionEnter2D(Collision2D collision2D)
