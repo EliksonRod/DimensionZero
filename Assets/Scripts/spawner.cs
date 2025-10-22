@@ -11,6 +11,7 @@ public class spawner : MonoBehaviour
     //gameobjects
     public GameObject[] Collectibles;
     public GameObject[] Hazards;
+    public GameObject[] HazardWarnings;
     public GameObject LevelExit;
     public GameObject PlayerObject;
 
@@ -27,38 +28,63 @@ public class spawner : MonoBehaviour
 
     //timer for spawning hazards
     public float hazardSpawnCooldown = 15f;
+    float hazardSpawnTimer;
 
     //timer for spawning collectibles
     public float collectibleSpawnCooldown = 1.5f;
     float collectibleSpawnTimer;
 
+    //Infinite Mode
+    public bool infiniteMode = false;
+    bool spawningHazards = true;
+
     private void Start()
     {
-        //currentTime = levelTimer;
-        StartCoroutine(ActivateHazard());
+        if (!infiniteMode)
+        StartCoroutine(NormalModeHazardSpawner());
+
+        collectibleSpawnTimer = collectibleSpawnCooldown;
+        hazardSpawnTimer = hazardSpawnCooldown;
 
     }
 
     // Update is called once per frame
     void Update()
     {
-        if (!PlayerObject.activeInHierarchy)
-        {
-            StartCoroutine(deathAnim());
-        }
-
+        //Updates the level timer display
         if (levelTimerDisplay != null)
             levelTimerDisplay.text = currentTime.ToString();
 
         //counts down the timers
-        if (levelTimer > 0)
+        if (levelTimer > 0 && !infiniteMode)
         {
             levelTimer -= 1 * Time.deltaTime;
             currentTime = Mathf.RoundToInt(levelTimer);
         }
-        collectibleSpawnTimer -= Time.deltaTime;
+
+        if (infiniteMode)
+        {
+            levelTimer += 1 * Time.deltaTime;
+            currentTime = Mathf.RoundToInt(levelTimer);
+
+            hazardSpawnTimer -= 1 * Time.deltaTime;
+            if (hazardSpawnTimer <= 0)
+            {
+                hazardSpawnTimer = hazardSpawnCooldown;
+                //InfiniteModeHazardSpawner();
+            }
+        }
+
+        if (spawningHazards)
+        {
+            StartCoroutine(InfiniteModeHazardSpawner());
+            spawningHazards = false;
+        }
+ 
 
         //Spawns collectibles after timer reaches 0
+        collectibleSpawnTimer -= Time.deltaTime;
+
         if (collectibleSpawnTimer <= 0)
         {
             collectibleSpawnTimer = collectibleSpawnCooldown;
@@ -73,15 +99,21 @@ public class spawner : MonoBehaviour
             Instantiate(Collectibles[randomIndex], randomSpawnPosition, Quaternion.identity);
         }
 
+        //Checks if player is dead to start death animation coroutine
+        if (!PlayerObject.activeInHierarchy)
+        {
+            StartCoroutine(deathAnim());
+        }
+
         //Activates level exit when timer reaches 0
-        if (currentTime <= 0)
+        if (currentTime <= 0 && !infiniteMode)
         {
             LevelExit.SetActive(true);
         }
     }
 
     //Activates hazards after a set cooldown time
-    IEnumerator ActivateHazard()
+    IEnumerator NormalModeHazardSpawner()
     {
         yield return new WaitForSeconds(hazardSpawnCooldown);
 
@@ -90,6 +122,41 @@ public class spawner : MonoBehaviour
             Hazards[i].SetActive(true);
             yield return new WaitForSeconds(hazardSpawnCooldown);
         }
+    }
+
+    IEnumerator InfiniteModeHazardSpawner()
+    {
+        yield return new WaitForSeconds(hazardSpawnCooldown - 3);
+
+        //Spawn a random hazard
+        int randomIndex = Random.Range(0, Hazards.Length);
+        int currentIndex = randomIndex;
+        randomIndex = Random.Range(0, Hazards.Length);
+        HazardWarnings[randomIndex].SetActive(true);
+
+        yield return new WaitForSeconds(3);
+
+        HazardWarnings[randomIndex].SetActive(false);
+        //Clear all hazards
+        for (int i = 0; i < Hazards.Length; i++)
+        {
+            Hazards[i].SetActive(false);
+        }
+
+
+        if (randomIndex == currentIndex)
+        {
+            //Ensure a different hazard is chosen
+            randomIndex = Random.Range(0, Hazards.Length);
+            Hazards[randomIndex].SetActive(true);
+        }
+        else
+        {
+            Hazards[randomIndex].SetActive(true);
+        }
+            //Hazards[randomIndex].SetActive(true);
+
+        spawningHazards = true;
     }
 
     //Plays death animation then reloads the scene
