@@ -75,7 +75,7 @@ public class spawner : MonoBehaviour
             }
         }
 
-        if (spawningHazards)
+        if (spawningHazards && infiniteMode)
         {
             StartCoroutine(InfiniteModeHazardSpawner());
             spawningHazards = false;

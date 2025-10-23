@@ -14,4 +14,8 @@ public class UIManager : MonoBehaviour
         PreviousUI.SetActive(false);
         NextUI.SetActive(true);
     }
+    public void CloseGame()
+    {
+        Application.Quit();
+    }
 }
